@@ -69,4 +69,5 @@ runs:
             exit 1
           fi
         done
-        echo "tunnel-url=$URL" >> "$GITHUB_OUTPUT"
+        echo $URL
+        echo "tunnel-url=$URL" >> $GITHUB_OUTPUT
