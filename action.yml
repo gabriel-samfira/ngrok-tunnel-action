@@ -70,9 +70,13 @@ runs:
                 exit 1
             fi
           fi
+          URL=$( echo "$RESULT" | jq -r ".tunnels[0].public_url | values" )
+          if [ -z $URL ];then
+            CNT=$(( CNT + 1 ))
+            RESULT=""
+          fi
           sleep 1
         done
         echo "Result is $RESULT"
-        URL=$( echo "$RESULT" | jq -r ".tunnels[0].public_url" )
         echo "URL is $URL"
         echo "tunnel-url=$URL" >> $GITHUB_OUTPUT
