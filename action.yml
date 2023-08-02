@@ -73,5 +73,4 @@ runs:
           sleep 1
         done
         URL=$( echo "$RESULT" | jq -r ".tunnels[0].public_url" )
-        echo "::add-mask::$URL"
         echo "tunnel-url=$URL" >> $GITHUB_OUTPUT
