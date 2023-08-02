@@ -61,22 +61,26 @@ runs:
         set +e
         CNT=0
         RESULT=$(curl -s --fail http://127.0.0.1:4040/api/tunnels)
-        while [ -z "$RESULT" ];do
+        URL=$( echo "$RESULT" | jq -r ".tunnels[0].public_url | values" )
+        while [ -z "$RESULT" ] || [ -z "$URL" ];do
+          if [ $CNT -gt 30 ];then
+              echo "Failed to get tunnel URL"
+              exit 1
+          fi
+
           RESULT=$(curl -s --fail http://127.0.0.1:4040/api/tunnels)
           if [ $? -ne 0 ];then
             CNT=$(( CNT + 1 ))
-            if [ $CNT -gt 30 ];then
-                echo "Failed to get tunnel URL"
-                exit 1
-            fi
+            continue
           fi
+
           URL=$( echo "$RESULT" | jq -r ".tunnels[0].public_url | values" )
-          if [ -z $URL ];then
+          if [ -z "$URL" ];then
             CNT=$(( CNT + 1 ))
             RESULT=""
           fi
           sleep 1
         done
-        echo "Result is $RESULT"
-        echo "URL is $URL"
+
+        echo "::add-mask::$URL"
         echo "tunnel-url=$URL" >> $GITHUB_OUTPUT
