@@ -55,5 +55,7 @@ runs:
         sudo /usr/local/bin/ngrok service install --config=/etc/ngrok/ngrok.yml
       
     - id: print-tunnel-url
-      run: echo "::set-output name=tunnel-url::$( curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url" )"
       shell: bash
+      run: |
+        URL=$( curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url" )
+        echo "tunnel-url=$URL" >> "$GITHUB_OUTPUT"
