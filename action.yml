@@ -53,6 +53,7 @@ runs:
         EOF
         sudo mv /tmp/ngrok.yml /etc/ngrok/ngrok.yml
         sudo /usr/local/bin/ngrok service install --config=/etc/ngrok/ngrok.yml
+        sudo systemctl start ngrok
       
     - id: print-tunnel-url
       shell: bash
