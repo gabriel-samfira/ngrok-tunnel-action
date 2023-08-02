@@ -16,8 +16,10 @@ inputs:
   port:
     description: 'The port to forward traffic to'
     required: true
-  save_url_to_filename:
-    description: 'Save the deployed tunnel URL to a file with the provided name'
+  ngrok_download_url:
+    description: 'Ngrok download URL'
+    required: true
+    default: 'https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz'
   ngrok_authtoken:
     description: 'Ngrok authorization token'
     required: true
@@ -29,22 +31,29 @@ outputs:
     
 runs:
   using: "composite"
-  steps: 
-    - run: wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
+  steps:
+    - name: Download ngrok
       shell: bash
-    - run: unzip -qq ngrok-stable-linux-amd64.zip
+      run: |
+        wget ${{ inputs.ngrok_download_url }} -O ngrok.tgz
+        tar xf ngrok.tgz
+        sudo cp ngrok /usr/local/bin/ngrok
+
+    - name: Configure ngrok
       shell: bash
-    - run: ./ngrok authtoken ${{ inputs.ngrok_authtoken }}
-      shell: bash
-    - run: ( timeout ${{ inputs.timeout }} ./ngrok ${{ inputs.tunnel_type }} ${{ inputs.port }} ) &
-      shell: bash
+      run: |
+        sudo mkdir -p /etc/ngrok
+        cat > /tmp/ngrok.yml << EOF
+        version: "2"
+        authtoken: ${{ inputs.ngrok_authtoken }}
+        tunnels:
+          garm:
+            proto: ${{ inputs.tunnel_type }}
+            addr: ${{ inputs.port }}
+        EOF
+        sudo mv /tmp/ngrok.yml /etc/ngrok/ngrok.yml
+        sudo /usr/local/bin/ngrok service install --config=/etc/ngrok/ngrok.yml
       
     - id: print-tunnel-url
-      run: echo "::set-output name=tunnel-url::$( curl http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url" )"
-      shell: bash      
-    - run: echo ${{ steps.print-tunnel-url.outputs.tunnel-url }}
-      shell: bash
-    
-    - if: "${{ inputs.save_url_to_filename != '' }}"
-      run: echo ${{ steps.print-tunnel-url.outputs.tunnel-url }} > ${{ inputs.save_url_to_filename }}
+      run: echo "::set-output name=tunnel-url::$( curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url" )"
       shell: bash
