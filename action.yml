@@ -57,5 +57,16 @@ runs:
     - id: print-tunnel-url
       shell: bash
       run: |
+        set +e
         URL=$( curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url" )
+        CNT=0
+        while [ $? -ne 0 ];do
+          URL=$( curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[0].public_url" )
+          sleep 1
+          CNT=$(( CNT + 1 ))
+          if [ $CNT -gt 30 ];then
+            echo "Failed to get tunnel URL"
+            exit 1
+          fi
+        done
         echo "tunnel-url=$URL" >> "$GITHUB_OUTPUT"
